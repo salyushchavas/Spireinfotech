@@ -1,0 +1,59 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-primary: #1B4332;
+    --color-primary-light: #2D6A4F;
+    --color-primary-dark: #0F2A1D;
+    --color-accent: #52B788;
+    --color-accent-light: #74C69D;
+    --color-accent-dark: #40916C;
+    --color-bg: #FDFBF7;
+    --color-bg-secondary: #F5F0E8;
+    --color-text: #1A1A1A;
+    --color-text-secondary: #4A4A4A;
+    --color-text-muted: #7A7A7A;
+    --color-border: #E5E0D5;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-cream text-gray-900 font-sans;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-playfair), "Playfair Display", Georgia, serif;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #F5F0E8;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #40916C;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #1B4332;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #40916C #F5F0E8;
+  }
+}

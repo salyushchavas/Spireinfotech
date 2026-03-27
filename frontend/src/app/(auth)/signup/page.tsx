@@ -1,0 +1,128 @@
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { useAuth } from "@/lib/auth-context";
+
+const signupSchema = z
+  .object({
+    name: z.string().min(2, "Name must be at least 2 characters"),
+    email: z.string().email("Please enter a valid email address"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
+type SignupValues = z.infer<typeof signupSchema>;
+
+export default function SignupPage() {
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const { register: registerUser } = useAuth();
+  const router = useRouter();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<SignupValues>({
+    resolver: zodResolver(signupSchema),
+  });
+
+  const onSubmit = async (data: SignupValues) => {
+    setError("");
+    try {
+      await registerUser(data.name, data.email, data.password);
+      window.location.href = "/dashboard";
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Registration failed. Please try again.");
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+    >
+      <h1 className="font-serif text-3xl font-bold text-gray-900 mb-2">
+        Create your account
+      </h1>
+      <p className="text-gray-500 mb-8">
+        Start your learning journey with Spire today.
+      </p>
+
+      {error && (
+        <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm">
+          {error}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Full name</label>
+          <input type="text" {...register("name")}
+            className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#52B788] focus:border-transparent transition"
+            placeholder="Arjun Mehta" />
+          {errors.name && <p className="text-xs text-red-500 mt-1.5">{errors.name.message}</p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Email address</label>
+          <input type="email" {...register("email")}
+            className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#52B788] focus:border-transparent transition"
+            placeholder="you@example.com" />
+          {errors.email && <p className="text-xs text-red-500 mt-1.5">{errors.email.message}</p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+          <div className="relative">
+            <input type={showPassword ? "text" : "password"} {...register("password")}
+              className="w-full px-4 py-3 pr-11 rounded-xl border border-gray-300 bg-white text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#52B788] focus:border-transparent transition"
+              placeholder="At least 6 characters" />
+            <button type="button" onClick={() => setShowPassword((v) => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+          {errors.password && <p className="text-xs text-red-500 mt-1.5">{errors.password.message}</p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Confirm password</label>
+          <input type="password" {...register("confirmPassword")}
+            className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#52B788] focus:border-transparent transition"
+            placeholder="Repeat your password" />
+          {errors.confirmPassword && <p className="text-xs text-red-500 mt-1.5">{errors.confirmPassword.message}</p>}
+        </div>
+
+        <p className="text-xs text-gray-400">
+          By creating an account, you agree to our{" "}
+          <Link href="#" className="text-[#1B4332] hover:underline">Terms of Service</Link>{" "}and{" "}
+          <Link href="#" className="text-[#1B4332] hover:underline">Privacy Policy</Link>.
+        </p>
+
+        <button type="submit" disabled={isSubmitting}
+          className="w-full py-3 rounded-xl bg-[#1B4332] text-white text-sm font-semibold hover:bg-[#2D6A4F] focus:outline-none focus:ring-2 focus:ring-[#52B788] focus:ring-offset-2 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+          {isSubmitting && <Loader2 size={16} className="animate-spin" />}
+          {isSubmitting ? "Creating account..." : "Create Account"}
+        </button>
+      </form>
+
+      <p className="text-sm text-center text-gray-500 mt-8">
+        Already have an account?{" "}
+        <Link href="/login" className="text-[#1B4332] font-semibold hover:underline">Sign in</Link>
+      </p>
+    </motion.div>
+  );
+}
