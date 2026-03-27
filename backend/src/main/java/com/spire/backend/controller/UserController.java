@@ -5,6 +5,7 @@ import com.spire.backend.entity.User;
 import com.spire.backend.exception.ResourceNotFoundException;
 import com.spire.backend.repository.UserRepository;
 import com.spire.backend.service.ProgressService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -31,7 +32,7 @@ public class UserController {
 
     @PutMapping("/profile")
     public ResponseEntity<ApiResponse<UserDTO>> updateProfile(
-            Authentication authentication, @RequestBody UserDTO dto) {
+            Authentication authentication, @Valid @RequestBody UpdateProfileRequest dto) {
         Long userId = Long.parseLong(authentication.getPrincipal().toString());
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
