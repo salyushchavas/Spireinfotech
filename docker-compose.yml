@@ -15,7 +15,7 @@ services:
       - pgdata:/var/lib/postgresql/data
 
   backend:
-    build: ./backend-fastapi
+    build: ./backend
     container_name: spire-backend
     restart: unless-stopped
     ports:
@@ -23,15 +23,15 @@ services:
     depends_on:
       - postgres
     environment:
-      DATABASE_URL: postgresql://spire:spire_secret@postgres:5432/spire
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/spire
+      SPRING_DATASOURCE_USERNAME: spire
+      SPRING_DATASOURCE_PASSWORD: spire_secret
       JWT_SECRET: change-me-in-production
       RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-rzp_test_placeholder}
       RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-placeholder_secret}
 
   frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
+    build: ./frontend
     container_name: spire-frontend
     restart: unless-stopped
     ports:

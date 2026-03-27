@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /a/Websites/Spire-Compet -maxdepth 3 -type f \\\\\\(-name Dockerfile* -o -name *.toml -o -name .env* \\\\\\))",
+      "Bash(git -C /a/Websites/Spire-Compet log --oneline)",
+      "Bash(git -C /a/Websites/Spire-Compet status --short)",
+      "Bash(cp -r src/* frontend/src/)",
+      "Bash(cp -r public/* frontend/public/)",
+      "Bash(cp package.json frontend/package.json)",
+      "Bash(cp next.config.mjs frontend/next.config.mjs)",
+      "Bash(cp tailwind.config.ts frontend/tailwind.config.ts)",
+      "Bash(rm -rf src public node_modules .next)",
+      "Bash(rm -f package.json package-lock.json next.config.mjs tailwind.config.ts tsconfig.json postcss.config.mjs eslint.config.mjs next-env.d.ts vercel.json Dockerfile.frontend .env.local)",
+      "Bash(taskkill //F //IM python.exe)",
+      "Bash(rm -rf backend-fastapi)",
+      "Bash(cp backend/src/main/resources/schema.sql database/schema.sql)",
+      "Bash(cp backend/src/main/resources/seed.sql database/seed.sql)"
+    ]
+  }
+}
