@@ -221,3 +221,30 @@ export async function updateCourse(id: number, data: Record<string, unknown>) {
 export async function deleteCourse(id: number) {
   return apiFetch<ApiResponse<unknown>>(`/api/courses/${id}`, { method: "DELETE" });
 }
+
+// ─── Lessons ────────────────────────────────────────────────────
+
+export async function getCourseLessons(courseId: number | string) {
+  const wrapper = await apiFetch<ApiResponse<unknown[]>>(`/api/courses/${courseId}/lessons`);
+  return wrapper.data;
+}
+
+export async function createLesson(courseId: number | string, data: { title: string; description?: string; videoUrl?: string; orderIndex?: number; durationMinutes?: number; isFree?: boolean }) {
+  const wrapper = await apiFetch<ApiResponse<unknown>>(`/api/courses/${courseId}/lessons`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  return wrapper.data;
+}
+
+export async function updateLesson(lessonId: number, data: Record<string, unknown>) {
+  const wrapper = await apiFetch<ApiResponse<unknown>>(`/api/lessons/${lessonId}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+  return wrapper.data;
+}
+
+export async function deleteLesson(lessonId: number) {
+  return apiFetch<ApiResponse<unknown>>(`/api/lessons/${lessonId}`, { method: "DELETE" });
+}
