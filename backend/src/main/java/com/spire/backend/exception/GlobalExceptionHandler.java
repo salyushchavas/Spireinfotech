@@ -10,6 +10,8 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -86,6 +88,14 @@ public class GlobalExceptionHandler {
         }
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ApiResponse.error(message));
+    }
+
+    // 404 — No endpoint matched (prevents "No static resource" 500 errors)
+    @ExceptionHandler({NoHandlerFoundException.class, NoResourceFoundException.class})
+    public ResponseEntity<ApiResponse<Void>> handleNotFoundEndpoint(Exception ex) {
+        log.warn("Endpoint not found: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error("Endpoint not found: " + ex.getMessage()));
     }
 
     // 500 — Catch-all (LOGS THE REAL ERROR — critical for debugging)

@@ -117,7 +117,7 @@ export function logout() {
 // ─── User / Profile ─────────────────────────────────────────────────
 
 export async function getProfile(): Promise<UserDTO> {
-  const wrapper = await apiFetch<ApiResponse<UserDTO>>("/api/user/profile");
+  const wrapper = await apiFetch<ApiResponse<UserDTO>>("/api/users/profile");
   return wrapper.data;
 }
 
