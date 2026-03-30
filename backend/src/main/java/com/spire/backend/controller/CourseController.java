@@ -123,4 +123,32 @@ public class CourseController {
         courseService.deleteCourse(courseId, userId, isAdmin);
         return ResponseEntity.ok(ApiResponse.success("Course deleted", null));
     }
+
+    // ─── Publish course (ADMIN or course owner INSTRUCTOR) ──────────
+
+    @PutMapping("/{courseId}/publish")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('INSTRUCTOR') and @courseSecurity.isOwner(#courseId, authentication))")
+    public ResponseEntity<ApiResponse<CourseDTO>> publishCourse(
+            @PathVariable Long courseId,
+            Authentication authentication) {
+        Long userId = Long.parseLong(authentication.getPrincipal().toString());
+        boolean isAdmin = authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
+
+        CourseDTO published = courseService.publishCourse(courseId, userId, isAdmin);
+        return ResponseEntity.ok(ApiResponse.success("Course published successfully", published));
+    }
+
+    // ─── Unpublish course ───────────────────────────────────────────
+
+    @PutMapping("/{courseId}/unpublish")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('INSTRUCTOR') and @courseSecurity.isOwner(#courseId, authentication))")
+    public ResponseEntity<ApiResponse<CourseDTO>> unpublishCourse(
+            @PathVariable Long courseId,
+            Authentication authentication) {
+        Long userId = Long.parseLong(authentication.getPrincipal().toString());
+        boolean isAdmin = authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
+
+        CourseDTO unpublished = courseService.unpublishCourse(courseId, userId, isAdmin);
+        return ResponseEntity.ok(ApiResponse.success("Course unpublished", unpublished));
+    }
 }

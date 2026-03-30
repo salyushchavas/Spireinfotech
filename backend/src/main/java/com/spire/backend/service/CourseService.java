@@ -128,4 +128,36 @@ public class CourseService {
 
         courseRepository.delete(course);
     }
+
+    /**
+     * Publish course — sets isPublished = true.
+     */
+    @Transactional
+    public CourseDTO publishCourse(Long courseId, Long userId, boolean isAdmin) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Course", "id", courseId));
+
+        if (!isAdmin && !course.getInstructor().getId().equals(userId)) {
+            throw new UnauthorizedException("You can only publish your own courses");
+        }
+
+        course.setIsPublished(true);
+        return CourseDTO.from(courseRepository.save(course));
+    }
+
+    /**
+     * Unpublish course — sets isPublished = false.
+     */
+    @Transactional
+    public CourseDTO unpublishCourse(Long courseId, Long userId, boolean isAdmin) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Course", "id", courseId));
+
+        if (!isAdmin && !course.getInstructor().getId().equals(userId)) {
+            throw new UnauthorizedException("You can only unpublish your own courses");
+        }
+
+        course.setIsPublished(false);
+        return CourseDTO.from(courseRepository.save(course));
+    }
 }
