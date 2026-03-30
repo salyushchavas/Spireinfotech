@@ -180,3 +180,44 @@ export async function getUsers() {
   const wrapper = await apiFetch<ApiResponse<unknown[]>>("/api/admin/users");
   return wrapper.data;
 }
+
+// ─── Instructor Requests ────────────────────────────────────────
+
+export async function requestInstructor() {
+  return apiFetch<ApiResponse<unknown>>("/api/users/request-instructor", { method: "POST" });
+}
+
+export async function getPendingInstructorRequests() {
+  const wrapper = await apiFetch<ApiResponse<unknown[]>>("/api/admin/instructor-requests");
+  return wrapper.data;
+}
+
+export async function approveInstructor(requestId: number) {
+  return apiFetch<ApiResponse<unknown>>(`/api/admin/approve-instructor/${requestId}`, { method: "PUT" });
+}
+
+export async function rejectInstructor(requestId: number) {
+  return apiFetch<ApiResponse<unknown>>(`/api/admin/reject-instructor/${requestId}`, { method: "PUT" });
+}
+
+// ─── Course Management ──────────────────────────────────────────
+
+export async function createCourse(data: { title: string; description?: string; shortDescription?: string; level?: string; price?: number; category?: string; tags?: string }) {
+  const wrapper = await apiFetch<ApiResponse<unknown>>("/api/courses", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  return wrapper.data;
+}
+
+export async function updateCourse(id: number, data: Record<string, unknown>) {
+  const wrapper = await apiFetch<ApiResponse<unknown>>(`/api/courses/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+  return wrapper.data;
+}
+
+export async function deleteCourse(id: number) {
+  return apiFetch<ApiResponse<unknown>>(`/api/courses/${id}`, { method: "DELETE" });
+}

@@ -26,7 +26,7 @@ export function middleware(request: NextRequest) {
       const payload = JSON.parse(
         Buffer.from(token.split(".")[1], "base64").toString()
       );
-      if (payload.role !== "admin" && payload.role !== "ADMIN") {
+      if (payload.role?.toUpperCase() !== "ADMIN") {
         return NextResponse.redirect(new URL("/dashboard", request.url));
       }
     } catch {

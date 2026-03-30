@@ -2,6 +2,7 @@ package com.spire.backend.service;
 
 import com.spire.backend.dto.CourseDTO;
 import com.spire.backend.dto.CourseRequest;
+import java.math.BigDecimal;
 import com.spire.backend.entity.Course;
 import com.spire.backend.entity.User;
 import com.spire.backend.exception.ResourceNotFoundException;
@@ -68,8 +69,8 @@ public class CourseService {
                 .description(dto.getDescription())
                 .shortDescription(dto.getShortDescription())
                 .level(dto.getLevel() != null ? Course.Level.valueOf(dto.getLevel().toUpperCase()) : Course.Level.BEGINNER)
-                .price(dto.getPrice())
-                .isFree(dto.getIsFree() != null ? dto.getIsFree() : true)
+                .price(dto.getPrice() != null ? dto.getPrice() : BigDecimal.ZERO)
+                .isFree(dto.getPrice() == null || dto.getPrice().compareTo(BigDecimal.ZERO) <= 0)
                 .durationHours(dto.getDurationHours())
                 .thumbnailUrl(dto.getThumbnailUrl())
                 .instructor(instructor)   // Server-side only — never from request
@@ -99,8 +100,11 @@ public class CourseService {
         if (dto.getDescription() != null) course.setDescription(dto.getDescription());
         if (dto.getShortDescription() != null) course.setShortDescription(dto.getShortDescription());
         if (dto.getLevel() != null) course.setLevel(Course.Level.valueOf(dto.getLevel().toUpperCase()));
-        if (dto.getPrice() != null) course.setPrice(dto.getPrice());
-        if (dto.getIsFree() != null) course.setIsFree(dto.getIsFree());
+        if (dto.getPrice() != null) {
+            course.setPrice(dto.getPrice());
+            // Auto-derive isFree from price
+            course.setIsFree(dto.getPrice().compareTo(BigDecimal.ZERO) <= 0);
+        }
         if (dto.getDurationHours() != null) course.setDurationHours(dto.getDurationHours());
         if (dto.getThumbnailUrl() != null) course.setThumbnailUrl(dto.getThumbnailUrl());
         if (dto.getCategory() != null) course.setCategory(dto.getCategory());

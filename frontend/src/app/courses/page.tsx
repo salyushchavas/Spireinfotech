@@ -1,37 +1,64 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Search, Clock } from "lucide-react";
-import { MOCK_COURSES } from "@/lib/mock-data";
+import { Search, Clock, Loader2 } from "lucide-react";
+import { getCourses } from "@/lib/api";
 import { LEVELS } from "@/lib/constants";
-import type { CourseLevel } from "@/lib/types";
-import { Badge } from "@/components/ui/Badge";
-import { ProgressBar } from "@/components/ui/ProgressBar";
 import { cn } from "@/lib/utils";
 
 const allLevels = ["All", ...LEVELS] as const;
 
+interface CourseItem {
+  id: number;
+  title: string;
+  slug: string;
+  description: string;
+  shortDescription: string;
+  level: string;
+  price: number;
+  isFree: boolean;
+  durationHours: number;
+  category: string;
+  rating: number;
+  ratingsCount: number;
+  lessonsCount: number;
+  enrolledCount: number;
+  thumbnailUrl: string | null;
+  instructor: { id: number; fullName: string; email: string } | null;
+}
+
 export default function CoursesPage() {
   const [selectedLevel, setSelectedLevel] = useState<string>("All");
   const [search, setSearch] = useState("");
+  const [courses, setCourses] = useState<CourseItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const filtered = useMemo(() => {
-    return MOCK_COURSES.filter((c) => {
-      const matchesLevel =
-        selectedLevel === "All" || c.level === selectedLevel;
-      const matchesSearch =
-        !search ||
-        c.title.toLowerCase().includes(search.toLowerCase()) ||
-        c.category.toLowerCase().includes(search.toLowerCase());
-      return matchesLevel && matchesSearch;
-    });
+  useEffect(() => {
+    const fetchCourses = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const params: Record<string, string> = {};
+        if (selectedLevel !== "All") params.level = selectedLevel.toUpperCase();
+        if (search.trim()) params.search = search.trim();
+        const data = await getCourses(params);
+        setCourses(data as CourseItem[]);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load courses");
+        setCourses([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCourses();
   }, [selectedLevel, search]);
 
   return (
     <section className="mx-auto max-w-7xl px-6 pt-32 pb-20">
-      <h1 className="font-[family-name:var(--font-playfair)] text-4xl font-bold text-[#1B4332] mb-2">
+      <h1 className="font-serif text-4xl font-bold text-[#1B4332] mb-2">
         Explore Courses
       </h1>
       <p className="text-gray-600 mb-8">
@@ -58,10 +85,7 @@ export default function CoursesPage() {
         </div>
 
         <div className="relative w-full sm:w-72 sm:ml-auto">
-          <Search
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-          />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             placeholder="Search courses..."
@@ -72,75 +96,89 @@ export default function CoursesPage() {
         </div>
       </div>
 
-      {/* Course grid */}
-      {filtered.length === 0 ? (
+      {/* Loading */}
+      {loading && (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="animate-spin text-emerald-600" size={32} />
+        </div>
+      )}
+
+      {/* Error */}
+      {error && (
+        <div className="text-center py-20">
+          <p className="text-red-500 mb-2">{error}</p>
+          <p className="text-gray-500 text-sm">Make sure the backend is running at {process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}</p>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {!loading && !error && courses.length === 0 && (
         <p className="text-center text-gray-500 py-20">
           No courses found. Try adjusting your filters.
         </p>
-      ) : (
+      )}
+
+      {/* Course grid */}
+      {!loading && !error && courses.length > 0 && (
         <motion.div
           className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
           initial="hidden"
           animate="visible"
-          variants={{
-            hidden: {},
-            visible: { transition: { staggerChildren: 0.08 } },
-          }}
+          variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.08 } } }}
         >
-          {filtered.map((course) => (
+          {courses.map((course) => (
             <motion.div
               key={course.id}
-              variants={{
-                hidden: { opacity: 0, y: 24 },
-                visible: { opacity: 1, y: 0 },
-              }}
+              variants={{ hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0 } }}
               transition={{ duration: 0.4 }}
             >
               <Link href={`/courses/${course.id}`} className="block group">
-                <div className="rounded-2xl bg-white/80 backdrop-blur-sm shadow-sm border border-white/40 overflow-hidden transition-shadow hover:shadow-md">
-                  {/* Thumbnail placeholder */}
-                  <div className="h-44 bg-gradient-to-br from-[#1B4332]/10 to-[#2D6A4F]/20 flex items-center justify-center">
-                    <span className="text-[#1B4332]/40 text-sm font-medium">
-                      {course.category}
-                    </span>
+                <div className="rounded-2xl bg-white shadow-sm border border-gray-100 overflow-hidden transition-shadow hover:shadow-md">
+                  {/* Thumbnail */}
+                  <div className="h-44 bg-gradient-to-br from-[#1B4332]/10 to-[#2D6A4F]/20 flex items-center justify-center overflow-hidden">
+                    {course.thumbnailUrl ? (
+                      <img src={course.thumbnailUrl} alt={course.title} className="w-full h-full object-cover" loading="lazy" />
+                    ) : (
+                      <span className="text-[#1B4332]/40 text-sm font-medium">{course.category}</span>
+                    )}
                   </div>
 
                   <div className="p-5">
                     <div className="flex items-center justify-between mb-2">
-                      <Badge variant="level" level={course.level} />
-                      {course.is_free && (
-                        <span className="text-xs font-semibold text-emerald-600">
-                          FREE
-                        </span>
+                      <span className={cn(
+                        "text-xs font-semibold px-2.5 py-0.5 rounded-full",
+                        course.level === "BEGINNER" && "bg-emerald-100 text-emerald-700",
+                        course.level === "INTERMEDIATE" && "bg-amber-100 text-amber-700",
+                        course.level === "ADVANCED" && "bg-red-100 text-red-700",
+                      )}>
+                        {course.level}
+                      </span>
+                      {course.isFree && (
+                        <span className="text-xs font-semibold text-emerald-600">FREE</span>
                       )}
                     </div>
 
-                    <h3 className="font-semibold text-[#1a1a1a] group-hover:text-[#1B4332] transition-colors line-clamp-1">
+                    <h3 className="font-semibold text-gray-900 group-hover:text-[#1B4332] transition-colors line-clamp-1">
                       {course.title}
                     </h3>
 
                     <p className="text-sm text-gray-500 mt-1">
-                      {course.instructor?.name}
+                      {course.instructor?.fullName || "Unknown instructor"}
                     </p>
 
                     <div className="flex items-center gap-3 mt-3 text-xs text-gray-500">
                       <span className="flex items-center gap-1">
                         <Clock size={12} />
-                        {course.duration_hours}h
+                        {course.durationHours}h
                       </span>
-                      <span>{course.lessons_count} lessons</span>
+                      <span>{course.lessonsCount} lessons</span>
                       <span className="ml-auto font-medium text-amber-600">
                         {course.rating} / 5
                       </span>
                     </div>
 
-                    {/* Progress indicator (mock: show for first 2 courses) */}
-                    {(course.id === "course-1" || course.id === "course-3") && (
-                      <div className="mt-3">
-                        <ProgressBar
-                          value={course.id === "course-1" ? 65 : 40}
-                        />
-                      </div>
+                    {!course.isFree && (
+                      <p className="mt-2 text-sm font-semibold text-gray-900">₹{course.price}</p>
                     )}
                   </div>
                 </div>

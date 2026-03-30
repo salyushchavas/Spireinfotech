@@ -84,7 +84,7 @@ export function Navbar() {
                         className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition">
                         <User size={16} /> Profile
                       </Link>
-                      {user.role === "admin" && (
+                      {user.role?.toUpperCase() === "ADMIN" && (
                         <Link href="/admin" onClick={() => setDropdownOpen(false)}
                           className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition">
                           <LayoutDashboard size={16} /> Admin Panel
@@ -149,7 +149,7 @@ export function Navbar() {
                     </div>
                     <Link href="/dashboard" onClick={() => setMobileOpen(false)}
                       className="text-sm font-medium text-gray-700 hover:text-[#1B4332] py-1">Dashboard</Link>
-                    {user.role === "admin" && (
+                    {user.role?.toUpperCase() === "ADMIN" && (
                       <Link href="/admin" onClick={() => setMobileOpen(false)}
                         className="text-sm font-medium text-gray-700 hover:text-[#1B4332] py-1">Admin Panel</Link>
                     )}
