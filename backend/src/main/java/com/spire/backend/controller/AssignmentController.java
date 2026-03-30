@@ -2,6 +2,7 @@ package com.spire.backend.controller;
 
 import com.spire.backend.dto.*;
 import com.spire.backend.entity.Assignment;
+import com.spire.backend.entity.Progress;
 import com.spire.backend.entity.Submission;
 import com.spire.backend.service.AssignmentService;
 import jakarta.validation.Valid;
@@ -22,7 +23,23 @@ public class AssignmentController {
 
     private final AssignmentService assignmentService;
 
-    // ─── Create assignment (instructor owner or admin) ──────────────
+    // ─── Lesson completion ──────────────────────────────────────────
+
+    @PostMapping("/api/lessons/{lessonId}/complete")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> completeLesson(
+            @PathVariable Long lessonId,
+            Authentication authentication) {
+        Long userId = extractUserId(authentication);
+        Progress progress = assignmentService.completeLesson(lessonId, userId);
+        return ResponseEntity.ok(ApiResponse.success("Lesson completed", Map.of(
+                "lessonId", lessonId,
+                "completed", progress.getCompleted(),
+                "completionPercent", progress.getCompletionPercent()
+        )));
+    }
+
+    // ─── Create assignment (instructor/admin) ───────────────────────
 
     @PostMapping("/api/courses/{courseId}/assignments")
     @PreAuthorize("hasRole('ADMIN') or (hasRole('INSTRUCTOR') and @courseSecurity.isOwner(#courseId, authentication))")
@@ -33,17 +50,16 @@ public class AssignmentController {
         Long userId = extractUserId(authentication);
         boolean isAdmin = isAdmin(authentication);
 
-        Assignment assignment = assignmentService.createAssignment(courseId, dto, userId, isAdmin);
+        Assignment a = assignmentService.createAssignment(courseId, dto, userId, isAdmin);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Assignment created", Map.of(
-                "id", assignment.getId(),
-                "title", assignment.getTitle(),
-                "description", assignment.getDescription() != null ? assignment.getDescription() : "",
-                "dueDate", assignment.getDueDate() != null ? assignment.getDueDate().toString() : "",
-                "createdAt", assignment.getCreatedAt().toString()
+                "id", a.getId(),
+                "title", a.getTitle(),
+                "assignmentType", a.getAssignmentType().name(),
+                "createdAt", a.getCreatedAt().toString()
         )));
     }
 
-    // ─── Get assignments for course (enrolled students + instructor + admin) ─
+    // ─── Get assignments with unlock status ─────────────────────────
 
     @GetMapping("/api/courses/{courseId}/assignments")
     @PreAuthorize("isAuthenticated()")
@@ -53,20 +69,11 @@ public class AssignmentController {
         Long userId = extractUserId(authentication);
         boolean isAdmin = isAdmin(authentication);
 
-        List<Assignment> assignments = assignmentService.getAssignments(courseId, userId, isAdmin);
-        List<Map<String, Object>> data = assignments.stream().map(a -> Map.<String, Object>of(
-                "id", a.getId(),
-                "title", a.getTitle(),
-                "description", a.getDescription() != null ? a.getDescription() : "",
-                "dueDate", a.getDueDate() != null ? a.getDueDate().toString() : "",
-                "courseId", a.getCourse().getId(),
-                "createdAt", a.getCreatedAt().toString()
-        )).toList();
-
+        List<Map<String, Object>> data = assignmentService.getAssignmentsWithAccess(courseId, userId, isAdmin);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 
-    // ─── Submit assignment (student only) ───────────────────────────
+    // ─── Submit assignment (student) ────────────────────────────────
 
     @PostMapping("/api/assignments/{assignmentId}/submit")
     @PreAuthorize("hasRole('STUDENT')")
@@ -75,16 +82,15 @@ public class AssignmentController {
             @Valid @RequestBody SubmissionRequest dto,
             Authentication authentication) {
         Long studentId = extractUserId(authentication);
-
-        Submission submission = assignmentService.submitAssignment(assignmentId, dto, studentId);
+        Submission s = assignmentService.submitAssignment(assignmentId, dto, studentId);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Assignment submitted", Map.of(
-                "id", submission.getId(),
-                "assignmentId", submission.getAssignment().getId(),
-                "submittedAt", submission.getSubmittedAt().toString()
+                "id", s.getId(),
+                "assignmentId", s.getAssignment().getId(),
+                "submittedAt", s.getSubmittedAt().toString()
         )));
     }
 
-    // ─── Get submissions (instructor/admin only) ────────────────────
+    // ─── Get submissions (instructor/admin) ─────────────────────────
 
     @GetMapping("/api/assignments/{assignmentId}/submissions")
     @PreAuthorize("hasRole('ADMIN') or hasRole('INSTRUCTOR')")
@@ -95,20 +101,22 @@ public class AssignmentController {
         boolean isAdmin = isAdmin(authentication);
 
         List<Submission> submissions = assignmentService.getSubmissions(assignmentId, userId, isAdmin);
-        List<Map<String, Object>> data = submissions.stream().map(s -> Map.<String, Object>of(
-                "id", s.getId(),
-                "studentEmail", s.getStudent().getEmail(),
-                "studentName", s.getStudent().getFullName(),
-                "content", s.getContent(),
-                "submittedAt", s.getSubmittedAt().toString(),
-                "grade", s.getGrade() != null ? s.getGrade() : -1,
-                "feedback", s.getFeedback() != null ? s.getFeedback() : ""
-        )).toList();
+        List<Map<String, Object>> data = submissions.stream().map(s -> {
+            Map<String, Object> map = new java.util.HashMap<>();
+            map.put("id", s.getId());
+            map.put("studentEmail", s.getStudent().getEmail());
+            map.put("studentName", s.getStudent().getFullName());
+            map.put("content", s.getContent());
+            map.put("submittedAt", s.getSubmittedAt().toString());
+            map.put("grade", s.getGrade());
+            map.put("feedback", s.getFeedback());
+            return map;
+        }).toList();
 
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 
-    // ─── Grade submission (instructor/admin only) ───────────────────
+    // ─── Grade submission (instructor/admin) ────────────────────────
 
     @PutMapping("/api/submissions/{submissionId}/grade")
     @PreAuthorize("hasRole('ADMIN') or hasRole('INSTRUCTOR')")
@@ -119,12 +127,12 @@ public class AssignmentController {
         Long userId = extractUserId(authentication);
         boolean isAdmin = isAdmin(authentication);
 
-        Submission submission = assignmentService.gradeSubmission(submissionId, dto, userId, isAdmin);
-        return ResponseEntity.ok(ApiResponse.success("Submission graded", Map.of(
-                "id", submission.getId(),
-                "grade", submission.getGrade(),
-                "feedback", submission.getFeedback() != null ? submission.getFeedback() : ""
-        )));
+        Submission s = assignmentService.gradeSubmission(submissionId, dto, userId, isAdmin);
+        Map<String, Object> result = new java.util.HashMap<>();
+        result.put("id", s.getId());
+        result.put("grade", s.getGrade());
+        result.put("feedback", s.getFeedback());
+        return ResponseEntity.ok(ApiResponse.success("Submission graded", result));
     }
 
     // ─── Helpers ────────────────────────────────────────────────────

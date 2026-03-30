@@ -19,4 +19,7 @@ public class AssignmentRequest {
 
     private String description;
     private LocalDateTime dueDate;
+
+    private String assignmentType;  // "LESSON" or "COURSE" (defaults to COURSE)
+    private Long lessonId;          // required when assignmentType = LESSON
 }
