@@ -136,6 +136,21 @@ export async function getCourse(id: string) {
 
 // ─── Enrollments ────────────────────────────────────────────────────
 
+export async function getMyCourses() {
+  const wrapper = await apiFetch<ApiResponse<unknown[]>>("/api/courses/my");
+  return wrapper.data;
+}
+
+export async function publishCourse(courseId: number) {
+  const wrapper = await apiFetch<ApiResponse<unknown>>(`/api/courses/${courseId}/publish`, { method: "PUT" });
+  return wrapper.data;
+}
+
+export async function unpublishCourse(courseId: number) {
+  const wrapper = await apiFetch<ApiResponse<unknown>>(`/api/courses/${courseId}/unpublish`, { method: "PUT" });
+  return wrapper.data;
+}
+
 export async function enroll(courseId: number) {
   const wrapper = await apiFetch<ApiResponse<unknown>>(`/api/enrollments/${courseId}`, { method: "POST" });
   return wrapper.data;

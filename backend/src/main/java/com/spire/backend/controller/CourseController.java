@@ -33,6 +33,16 @@ public class CourseController {
     private final EnrollmentService enrollmentService;
     private final UserRepository userRepository;
 
+    // ─── Instructor's own courses ─────────────────────────────────
+
+    @GetMapping("/my")
+    @PreAuthorize("hasRole('INSTRUCTOR') or hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<CourseDTO>>> getMyCourses(Authentication authentication) {
+        Long userId = Long.parseLong(authentication.getPrincipal().toString());
+        List<CourseDTO> courses = courseService.getCoursesByInstructor(userId);
+        return ResponseEntity.ok(ApiResponse.success(courses));
+    }
+
     // ─── Public endpoints ───────────────────────────────────────────
 
     @GetMapping

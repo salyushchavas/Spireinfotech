@@ -42,6 +42,12 @@ public class CourseService {
                 .collect(Collectors.toList());
     }
 
+    public List<CourseDTO> getCoursesByInstructor(Long instructorId) {
+        return courseRepository.findByInstructorId(instructorId).stream()
+                .map(CourseDTO::from)
+                .collect(Collectors.toList());
+    }
+
     public List<CourseDTO> searchCourses(String query) {
         return courseRepository.searchByTitle(query).stream()
                 .map(CourseDTO::from)
