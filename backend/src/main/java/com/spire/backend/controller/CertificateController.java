@@ -36,6 +36,7 @@ public class CertificateController {
 
         return ResponseEntity.ok(ApiResponse.success("Certificate generated", Map.of(
                 "id", cert.getId(),
+                "certificateId", cert.getCertificateId(),
                 "certificateUrl", cert.getCertificateUrl(),
                 "issuedAt", cert.getIssuedAt().toString()
         )));
@@ -57,6 +58,7 @@ public class CertificateController {
 
         return ResponseEntity.ok(ApiResponse.success(Map.of(
                 "exists", true,
+                "certificateId", cert.getCertificateId(),
                 "certificateUrl", cert.getCertificateUrl(),
                 "issuedAt", cert.getIssuedAt().toString()
         )));
@@ -82,11 +84,30 @@ public class CertificateController {
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 
+    // ─── Public verification ───────────────────────────────────────
+
+    @GetMapping("/verify/{certificateId}")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> verifyCertificate(
+            @PathVariable String certificateId) {
+        return certificateService.findByCertificateId(certificateId)
+                .map(cert -> {
+                    Map<String, Object> data = new java.util.HashMap<>();
+                    data.put("valid", true);
+                    data.put("studentName", cert.getUser().getFullName());
+                    data.put("courseTitle", cert.getCourse().getTitle());
+                    data.put("issuedAt", cert.getIssuedAt().toString());
+                    data.put("certificateId", cert.getCertificateId());
+                    return ResponseEntity.ok(ApiResponse.success(data));
+                })
+                .orElse(ResponseEntity.ok(ApiResponse.success(Map.of("valid", false))));
+    }
+
     // ─── Download PDF ───────────────────────────────────────────────
 
-    @GetMapping("/download/{fileName}")
-    public ResponseEntity<Resource> downloadCertificate(@PathVariable String fileName) {
-        File file = new File("certificates/" + fileName);
+    @GetMapping("/download/{courseId}/{fileName}")
+    public ResponseEntity<Resource> downloadCertificate(
+            @PathVariable String courseId, @PathVariable String fileName) {
+        File file = new File("certificates/" + courseId + "/" + fileName);
         if (!file.exists()) {
             return ResponseEntity.notFound().build();
         }

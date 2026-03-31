@@ -22,7 +22,8 @@
       "Bash(./mvnw clean:*)",
       "Bash(grep -v \"//.*UUID\")",
       "Read(//a/frontend/src/components/courses/**)",
-      "Read(//a/frontend/src/lib/**)"
+      "Read(//a/frontend/src/lib/**)",
+      "Read(//a/frontend/src/app/courses/[id]/**)"
     ]
   }
 }

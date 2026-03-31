@@ -82,20 +82,24 @@ public class CertificateService {
             }
         }
 
-        // 6. Generate PDF
-        String fileName = String.format("cert_%d_%d_%d.pdf", userId, courseId, System.currentTimeMillis());
-        String dirPath = "certificates";
-        String filePath = dirPath + "/" + fileName;
-
-        new File(dirPath).mkdirs();
-        generatePdf(filePath, user.getFullName(), course.getTitle());
-
-        // 7. Save certificate record
+        // 6. Generate certificate record first (to get certificateId)
         Certificate certificate = Certificate.builder()
                 .user(user)
                 .course(course)
-                .certificateUrl("/api/certificates/download/" + fileName)
+                .certificateUrl("") // will be set after PDF generation
                 .build();
+        certificate = certificateRepository.save(certificate);
+
+        // 7. Generate PDF with certificate ID
+        String dirPath = String.format("certificates/%d", courseId);
+        String fileName = String.format("%d-%d.pdf", userId, System.currentTimeMillis());
+        String filePath = dirPath + "/" + fileName;
+
+        new File(dirPath).mkdirs();
+        generatePdf(filePath, user.getFullName(), course.getTitle(), certificate.getCertificateId());
+
+        // 8. Update URL
+        certificate.setCertificateUrl("/api/certificates/download/" + courseId + "/" + fileName);
 
         log.info("Certificate generated for user {} course {}", userId, courseId);
         return certificateRepository.save(certificate);
@@ -110,7 +114,11 @@ public class CertificateService {
         return certificateRepository.findByUserId(userId);
     }
 
-    private void generatePdf(String filePath, String studentName, String courseTitle) {
+    public java.util.Optional<Certificate> findByCertificateId(String certificateId) {
+        return certificateRepository.findByCertificateId(certificateId);
+    }
+
+    private void generatePdf(String filePath, String studentName, String courseTitle, String certId) {
         try {
             Document doc = new Document(PageSize.A4.rotate());
             PdfWriter.getInstance(doc, new FileOutputStream(filePath));
@@ -172,6 +180,18 @@ public class CertificateService {
             Paragraph platform = new Paragraph("Spire Infotech Platform", platformFont);
             platform.setAlignment(Element.ALIGN_CENTER);
             doc.add(platform);
+
+            doc.add(new Paragraph("\n"));
+
+            // Certificate ID + verification
+            Font idFont = new Font(Font.HELVETICA, 8, Font.NORMAL, new Color(180, 180, 180));
+            Paragraph certIdP = new Paragraph("Certificate ID: " + certId, idFont);
+            certIdP.setAlignment(Element.ALIGN_CENTER);
+            doc.add(certIdP);
+
+            Paragraph verify = new Paragraph("Verify at: spire-infotech.com/certificate/" + certId, idFont);
+            verify.setAlignment(Element.ALIGN_CENTER);
+            doc.add(verify);
 
             doc.close();
             log.info("PDF generated: {}", filePath);
