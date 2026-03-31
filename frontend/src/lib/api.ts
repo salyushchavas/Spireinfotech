@@ -24,6 +24,13 @@ export interface AuthResponse {
   user: UserDTO;
 }
 
+export interface InstructorStudent {
+  studentName: string;
+  email: string;
+  courseTitle: string;
+  enrolledAt: string;
+}
+
 // ─── Core fetch helper ──────────────────────────────────────────────
 
 export async function apiFetch<T = unknown>(
@@ -126,6 +133,11 @@ export async function getProfile(): Promise<UserDTO> {
 export async function getCourses(params?: { level?: string; search?: string }) {
   const qs = params ? "?" + new URLSearchParams(params as Record<string, string>).toString() : "";
   const wrapper = await apiFetch<ApiResponse<unknown[]>>(`/api/courses${qs}`);
+  return wrapper.data;
+}
+
+export async function getInstructorStudents() {
+  const wrapper = await apiFetch<ApiResponse<Array<{ studentName: string; email: string; courseTitle: string; enrolledAt: string }>>>("/api/instructor/students");
   return wrapper.data;
 }
 

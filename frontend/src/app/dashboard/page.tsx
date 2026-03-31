@@ -8,7 +8,7 @@ import {
   Users, BarChart3, Loader2, AlertCircle, Trash2, Eye, Edit, Globe, GlobeLock,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { getEnrollments, requestInstructor, getMyCourses, deleteCourse, publishCourse, unpublishCourse } from "@/lib/api";
+import { getEnrollments, requestInstructor, getMyCourses, getInstructorStudents, deleteCourse, publishCourse, unpublishCourse } from "@/lib/api";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
@@ -42,6 +42,8 @@ export default function DashboardPage() {
   // Instructor course management
   const [myCourses, setMyCourses] = useState<InstructorCourse[]>([]);
   const [myCoursesLoading, setMyCoursesLoading] = useState(false);
+  const [myStudents, setMyStudents] = useState<Array<{ studentName: string; email: string; courseTitle: string; enrolledAt: string }>>([]);
+  const [studentsLoading, setStudentsLoading] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -59,6 +61,12 @@ export default function DashboardPage() {
         .then((data) => setMyCourses((data ?? []) as InstructorCourse[]))
         .catch(() => setMyCourses([]))
         .finally(() => setMyCoursesLoading(false));
+
+      setStudentsLoading(true);
+      getInstructorStudents()
+        .then((data) => setMyStudents(data ?? []))
+        .catch(() => setMyStudents([]))
+        .finally(() => setStudentsLoading(false));
     }
   }, [user]);
 
@@ -270,6 +278,72 @@ export default function DashboardPage() {
                     </div>
                   </motion.div>
                 ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── My Students (Instructor) ──────────────────────────────── */}
+        {isInstructor && (
+          <div className="mb-10">
+            <h2 className="text-xl font-bold text-[#1B4332] mb-4 flex items-center gap-2">
+              <Users size={20} /> My Students
+              {myStudents.length > 0 && (
+                <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                  {myStudents.length} enrolled
+                </span>
+              )}
+            </h2>
+
+            {studentsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 size={24} className="animate-spin text-[#52B788]" />
+              </div>
+            ) : myStudents.length === 0 ? (
+              <GlassCard className="text-center py-12">
+                <Users size={40} className="mx-auto text-gray-300 mb-3" />
+                <p className="text-gray-500 text-sm">No students enrolled yet.</p>
+              </GlassCard>
+            ) : (
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-gray-50 border-b border-gray-100">
+                        <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Student</th>
+                        <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
+                        <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Course</th>
+                        <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Enrolled</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {myStudents.map((s, i) => (
+                        <motion.tr key={`${s.email}-${s.courseTitle}-${i}`}
+                          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                          transition={{ delay: i * 0.03 }}
+                          className="hover:bg-gray-50/50 transition">
+                          <td className="px-6 py-3">
+                            <div className="flex items-center gap-2">
+                              <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold">
+                                {s.studentName?.charAt(0)?.toUpperCase()}
+                              </div>
+                              <span className="font-medium text-gray-900">{s.studentName}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-3 text-gray-500">{s.email}</td>
+                          <td className="px-6 py-3">
+                            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-violet-50 text-violet-700">
+                              {s.courseTitle}
+                            </span>
+                          </td>
+                          <td className="px-6 py-3 text-gray-400 text-xs">
+                            {new Date(s.enrolledAt).toLocaleDateString()}
+                          </td>
+                        </motion.tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>

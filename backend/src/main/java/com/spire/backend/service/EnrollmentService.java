@@ -1,6 +1,7 @@
 package com.spire.backend.service;
 
 import com.spire.backend.dto.CourseDTO;
+import com.spire.backend.dto.InstructorStudentDTO;
 import com.spire.backend.entity.Course;
 import com.spire.backend.entity.Enrollment;
 import com.spire.backend.entity.User;
@@ -49,6 +50,12 @@ public class EnrollmentService {
     public List<CourseDTO> getUserEnrollments(Long userId) {
         return enrollmentRepository.findByUserId(userId).stream()
                 .map(e -> CourseDTO.from(e.getCourse()))
+                .collect(Collectors.toList());
+    }
+
+    public List<InstructorStudentDTO> getStudentsForInstructor(Long instructorId) {
+        return enrollmentRepository.findByInstructorId(instructorId).stream()
+                .map(InstructorStudentDTO::from)
                 .collect(Collectors.toList());
     }
 
