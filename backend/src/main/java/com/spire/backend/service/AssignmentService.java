@@ -133,8 +133,12 @@ public class AssignmentService {
         Lesson lesson = lessonRepository.findById(lessonId)
                 .orElseThrow(() -> new ResourceNotFoundException("Lesson", "id", lessonId));
 
-        if (!enrollmentRepository.existsByUserIdAndCourseId(userId, lesson.getCourse().getId())) {
-            throw new UnauthorizedException("You must be enrolled to complete lessons");
+        // Allow: enrolled students, course instructor, or admin
+        Long courseId = lesson.getCourse().getId();
+        boolean isEnrolled = enrollmentRepository.existsByUserIdAndCourseId(userId, courseId);
+        boolean isOwner = lesson.getCourse().getInstructor().getId().equals(userId);
+        if (!isEnrolled && !isOwner) {
+            throw new UnauthorizedException("You must be enrolled or be the course instructor");
         }
 
         // Find or create progress record
@@ -169,8 +173,10 @@ public class AssignmentService {
         Assignment assignment = assignmentRepository.findById(assignmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Assignment", "id", assignmentId));
 
-        if (!enrollmentRepository.existsByUserIdAndCourseId(studentId, assignment.getCourse().getId())) {
-            throw new UnauthorizedException("You must be enrolled to submit assignments");
+        boolean isEnrolled = enrollmentRepository.existsByUserIdAndCourseId(studentId, assignment.getCourse().getId());
+        boolean isOwner = assignment.getCourse().getInstructor().getId().equals(studentId);
+        if (!isEnrolled && !isOwner) {
+            throw new UnauthorizedException("You must be enrolled or be the course instructor");
         }
 
         // Check if assignment is unlocked

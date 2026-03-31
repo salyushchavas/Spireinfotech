@@ -26,7 +26,7 @@ public class AssignmentController {
     // ─── Lesson completion ──────────────────────────────────────────
 
     @PostMapping("/api/lessons/{lessonId}/complete")
-    @PreAuthorize("hasRole('STUDENT')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<Map<String, Object>>> completeLesson(
             @PathVariable Long lessonId,
             Authentication authentication) {
@@ -76,7 +76,7 @@ public class AssignmentController {
     // ─── Submit assignment (student) ────────────────────────────────
 
     @PostMapping("/api/assignments/{assignmentId}/submit")
-    @PreAuthorize("hasRole('STUDENT')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<Map<String, Object>>> submitAssignment(
             @PathVariable Long assignmentId,
             @Valid @RequestBody SubmissionRequest dto,
